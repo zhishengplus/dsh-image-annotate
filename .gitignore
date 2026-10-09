@@ -1,0 +1,19 @@
+# 依赖与构建产物
+node_modules/
+dist/
+*.tgz
+
+# 测试与调试产物
+test/shots/
+test/screenshot-fixture.png
+test/debug/
+__pycache__/
+*.pyc
+.playwright/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

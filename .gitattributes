@@ -1,0 +1,8 @@
+# 统一用 LF 存储，避免 Windows 检出把 shell/CI 脚本搞坏
+* text=auto eol=lf
+
+*.png binary
+*.gif binary
+*.jpg binary
+*.webm binary
+*.tgz binary

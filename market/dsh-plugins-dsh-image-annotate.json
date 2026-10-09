@@ -1,0 +1,21 @@
+{
+  "id": "github:zhishengplus/dsh-image-annotate",
+  "name": "DSH Image Annotate",
+  "description": [
+    {
+      "language": "en-US",
+      "content": "An annotation pen for the image lightbox: circle, label, then keep moving / resizing / re-editing every mark — and send the flattened PNG straight into the composer"
+    },
+    {
+      "language": "zh-CN",
+      "content": "给图片预览加一支画笔：圈画、打字，画完还能再选中拖动、缩放、改字，一键把标注图放进输入框发给模型"
+    }
+  ],
+  "support_versions": ">=0.2.0-rc.2",
+  "urls": {
+    "homepage": "https://github.com/zhishengplus/dsh-image-annotate",
+    "repository": "https://github.com/zhishengplus/dsh-image-annotate",
+    "issues": "https://github.com/zhishengplus/dsh-image-annotate/issues"
+  },
+  "relationship": []
+}

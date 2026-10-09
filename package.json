@@ -1,0 +1,67 @@
+{
+    "name":  "@dsh-plugin/dsh-image-annotate",
+    "version":  "0.1.0",
+    "description":  "An annotation pen for the DeepSeek Harness image lightbox: draw, label, then move / resize / re-edit any mark, and send the annotated PNG straight into the composer. 给 DSH 图片预览加一支画笔。",
+    "type":  "module",
+    "main":  "lib/index.js",
+    "exports":  {
+                    ".":  "./lib/index.js",
+                    "./client":  "./lib/client.js",
+                    "./package.json":  "./package.json"
+                },
+    "files":  [
+                  "lib",
+                  "cordis.patch.yml",
+                  "README.md",
+                  "README.zh_CN.md",
+                  "LICENSE"
+              ],
+    "scripts":  {
+                    "check":  "node --check lib/index.js \u0026\u0026 node --check lib/client.js",
+                    "test":  "python test/test_annotate.py \u0026\u0026 python test/test_edit.py",
+                    "test:e2e":  "python test/e2e_dsh.py",
+                    "pack:dry":  "npm pack --dry-run"
+                },
+    "dsh":  {
+                "bundle":  {
+                               "patch":  "./cordis.patch.yml"
+                           },
+                "client":  {
+                               "inject":  [
+
+                                          ],
+                               "platform":  "web"
+                           }
+            },
+    "engines":  {
+                    "node":  "\u003e=20"
+                },
+    "license":  "MIT",
+    "keywords":  [
+                     "dsh",
+                     "dsh-plugin",
+                     "dsh-plugins",
+                     "deepseek",
+                     "deepseek-harness",
+                     "cordis",
+                     "plugin",
+                     "annotation",
+                     "annotate",
+                     "markup",
+                     "image",
+                     "lightbox",
+                     "screenshot",
+                     "review"
+                 ],
+    "repository":  {
+                       "type":  "git",
+                       "url":  "git+https://github.com/zhishengplus/dsh-image-annotate.git"
+                   },
+    "homepage":  "https://github.com/zhishengplus/dsh-image-annotate",
+    "bugs":  {
+                 "url":  "https://github.com/zhishengplus/dsh-image-annotate/issues"
+             },
+    "publishConfig":  {
+                          "access":  "public"
+                      }
+}

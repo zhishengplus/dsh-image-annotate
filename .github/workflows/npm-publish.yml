@@ -1,0 +1,33 @@
+name: npm-publish
+
+# 发布方式二选一：
+#   1) 在 GitHub 上创建 Release（推荐，且会带上 npm provenance）；
+#   2) 手动触发本 workflow。
+#
+# 前置：仓库 Settings → Secrets and variables → Actions 里配置 NPM_TOKEN
+# （npm 账号的 Automation token，需对该包有 publish 权限）。
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Syntax check
+        run: npm run check
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

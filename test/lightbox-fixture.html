@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <title>dsh-image-annotate fixture</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #14161a;
+        color: #eee;
+        font: 14px/1.5 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      }
+      /* 模拟会话区与输入框（composer） */
+      #app {
+        padding: 20px;
+      }
+      #composer {
+        position: fixed;
+        left: 20px;
+        bottom: 20px;
+        width: 620px;
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 10px;
+        background: #1c1f24;
+      }
+      #editor {
+        min-height: 56px;
+        outline: none;
+      }
+      #rail {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+        min-height: 20px;
+      }
+      #rail img {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+      /* 复刻 dsh-client-ui-primitives 的 ImageLightbox 结构 */
+      .lb-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: grid;
+        place-items: center;
+      }
+      .lb-mask {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.72);
+      }
+      .lb-image {
+        position: relative;
+        width: 800px;
+        height: 500px;
+        object-fit: fill;
+      }
+      .lb-close {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+        width: 32px;
+        height: 32px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">fixture：模拟 dsh 会话 + 图片预览 lightbox</div>
+
+    <div id="composer">
+      <div id="editor" contenteditable="true" role="textbox" data-lexical-editor="true"></div>
+      <div id="rail"></div>
+    </div>
+
+    <script>
+      /* 生成一张 600x400 的测试图（浅灰底 + 网格），作为 lightbox 的原图 */
+      (function () {
+        const c = document.createElement("canvas");
+        c.width = 600;
+        c.height = 400;
+        const g = c.getContext("2d");
+        g.fillStyle = "#f4f4f6";
+        g.fillRect(0, 0, 600, 400);
+        g.strokeStyle = "#c9ccd4";
+        g.lineWidth = 1;
+        for (let x = 0; x <= 600; x += 50) {
+          g.beginPath();
+          g.moveTo(x + 0.5, 0);
+          g.lineTo(x + 0.5, 400);
+          g.stroke();
+        }
+        for (let y = 0; y <= 400; y += 50) {
+          g.beginPath();
+          g.moveTo(0, y + 0.5);
+          g.lineTo(600, y + 0.5);
+          g.stroke();
+        }
+        g.fillStyle = "#333";
+        g.font = "20px sans-serif";
+        g.fillText("TEST IMAGE 600x400", 20, 40);
+        window.__TEST_IMAGE = c.toDataURL("image/png");
+      })();
+
+      /* 模拟 ui-conversation 的图片入口：paste 事件里取 clipboardData 的 file，
+         落成草稿缩略图（blob: URL），这样测试能观察到「附件是否真的进了输入框」 */
+      (function () {
+        const editor = document.getElementById("editor");
+        const rail = document.getElementById("rail");
+        window.__intake = [];
+        editor.addEventListener("paste", (event) => {
+          const dt = event.clipboardData;
+          if (!dt) return;
+          const files = [];
+          for (const item of dt.items) {
+            if (item.kind !== "file") continue;
+            const file = item.getAsFile();
+            if (file) files.push(file);
+          }
+          if (files.length === 0) return;
+          event.preventDefault();
+          for (const file of files) {
+            const img = document.createElement("img");
+            img.src = URL.createObjectURL(file);
+            img.setAttribute("data-attachment", "1");
+            img.dataset.name = file.name;
+            rail.appendChild(img);
+            window.__intake.push(file);
+          }
+        });
+      })();
+
+      /* 记录所有 createObjectURL 的 blob，便于测试取回导出的 PNG */
+      (function () {
+        const original = URL.createObjectURL.bind(URL);
+        window.__blobs = [];
+        URL.createObjectURL = function (blob) {
+          if (blob instanceof Blob && blob.type === "image/png") window.__blobs.push(blob);
+          return original(blob);
+        };
+      })();
+
+      /* 迷你 ModuleLoader：加载插件包并按 cordis 约定调用 apply */
+      window.__loaded = [];
+      window.__ModuleLoader__ = {
+        load(spec) {
+          const exports = spec.factory(function requireStub(name) {
+            throw new Error("fixture: unexpected module request " + name);
+          });
+          window.__loaded.push({ id: spec.id, exports });
+          window.__ctx = {
+            _services: {},
+            get(name) {
+              return this._services[name];
+            },
+            provide(name, value) {
+              this._services[name] = value;
+            },
+            effect(setup) {
+              window.__dispose = setup();
+            },
+          };
+          exports.apply(window.__ctx);
+        },
+      };
+
+      /* 打开/关闭 lightbox——结构与 dsh-client-ui-primitives ImageLightbox 一致 */
+      window.__openLightbox = function (src) {
+        const backdrop = document.createElement("div");
+        backdrop.className = "lb-backdrop";
+        backdrop.setAttribute("role", "dialog");
+        backdrop.setAttribute("aria-modal", "true");
+        backdrop.setAttribute("aria-label", "image preview");
+        const mask = document.createElement("div");
+        mask.className = "lb-mask";
+        mask.setAttribute("aria-hidden", "true");
+        const img = document.createElement("img");
+        img.className = "lb-image";
+        img.src = src;
+        img.alt = "preview";
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "lb-close";
+        close.textContent = "×";
+        close.addEventListener("click", () => backdrop.remove());
+        mask.addEventListener("mousedown", () => backdrop.remove());
+        backdrop.appendChild(mask);
+        backdrop.appendChild(img);
+        backdrop.appendChild(close);
+        document.body.appendChild(backdrop);
+        return backdrop;
+      };
+    </script>
+
+    <script src="../lib/client.js"></script>
+  </body>
+</html>
