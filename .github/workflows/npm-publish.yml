@@ -1,11 +1,14 @@
 name: npm-publish
 
 # 发布方式二选一：
-#   1) 在 GitHub 上创建 Release（推荐，且会带上 npm provenance）；
+#   1) 在 GitHub 上创建 Release（推荐，会带上 npm provenance）；
 #   2) 手动触发本 workflow。
 #
 # 前置：仓库 Settings → Secrets and variables → Actions 里配置 NPM_TOKEN
-# （npm 账号的 Automation token，需对该包有 publish 权限）。
+# （npm 的 Automation token，需对该包名有 publish 权限）。
+#
+# 没配 NPM_TOKEN 时不会报红：publish 那一步会被跳过，只在日志里说明原因，
+# 这样「先建 Release 打版本、之后再加 token」的顺序也是安全的。
 
 on:
   release:
@@ -27,7 +30,19 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - name: Syntax check
         run: npm run check
+      - name: Check for NPM_TOKEN
+        id: token
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=npm-publish skipped::NPM_TOKEN is not configured for this repository, so nothing was published. Add it under Settings → Secrets and variables → Actions to enable publishing."
+          fi
       - name: Publish to npm
+        if: steps.token.outputs.present == 'true'
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
