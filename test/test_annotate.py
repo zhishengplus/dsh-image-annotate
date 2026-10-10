@@ -14,10 +14,14 @@
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import sys
 
 from playwright.sync_api import sync_playwright
+
+# 允许用 DSH_TEST_LOCALE=en-US 复现 GitHub runner 的英文环境（CI 就是这么跑的）
+LOCALE = os.environ.get("DSH_TEST_LOCALE") or None
 
 HERE = pathlib.Path(__file__).resolve().parent
 FIXTURE = (HERE / "lightbox-fixture.html").as_uri()
@@ -56,7 +60,7 @@ def red_pixels(page, selector: str, x: int, y: int, w: int, h: int) -> int:
 def main() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page(viewport={"width": 1280, "height": 900})
+        page = browser.new_page(viewport={"width": 1280, "height": 900}, **({"locale": LOCALE} if LOCALE else {}))
         console: list[str] = []
         page.on("console", lambda msg: console.append(f"{msg.type}: {msg.text}"))
         page.on("pageerror", lambda err: console.append(f"pageerror: {err}"))
@@ -117,7 +121,7 @@ def main() -> int:
         page.mouse.up()
         page.wait_for_timeout(120)
         before_undo = red_pixels(page, ".dsa-canvas", 480, 300, 320, 200)
-        page.click('.dsa-btn[title^="撤销"]')
+        page.click('[data-dsa-action="undo"]')
         page.wait_for_timeout(120)
         after_undo = red_pixels(page, ".dsa-canvas", 480, 300, 320, 200)
         first_kept = red_pixels(page, ".dsa-canvas", 0, 0, 400, 200)
@@ -127,7 +131,7 @@ def main() -> int:
         # 圆圈工具：手绘一整圈并回到起点，也要成形（回归：曾用「起点→终点」判定而塌成 0）
         import math
 
-        page.click('.dsa-btn[title="圆圈"], .dsa-btn[title="Circle"]')
+        page.click('[data-dsa-tool="ellipse"]')
         page.wait_for_timeout(100)
         ex, ey = box["x"] + box["w"] * 0.3, box["y"] + box["h"] * 0.6
         radius = 70
@@ -149,7 +153,7 @@ def main() -> int:
         check("圆圈工具（手绘一圈回到起点）成形", ellipse_pixels > 60, f"区域内红色像素 {ellipse_pixels}")
 
         # 圈完之后撤销掉，保持后面导出用例的笔迹数量不变
-        page.click('.dsa-btn[title^="撤销"], .dsa-btn[title^="Undo"]')
+        page.click('[data-dsa-action="undo"]')
         page.wait_for_timeout(100)
         ellipse_after_undo = red_pixels(
             page,
@@ -162,7 +166,7 @@ def main() -> int:
         check("圆圈可被撤销", ellipse_after_undo == 0, f"撤销后 {ellipse_after_undo}")
 
         # 加入输入框
-        page.click(".dsa-primary")
+        page.click('[data-dsa-action="attach"]')
         page.wait_for_selector("#rail img[data-attachment]", timeout=6000)
         attached = page.evaluate(
             """() => { const img = document.querySelector('#rail img[data-attachment]');

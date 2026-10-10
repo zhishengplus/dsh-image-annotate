@@ -9,10 +9,14 @@
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import sys
 
 from playwright.sync_api import sync_playwright
+
+# 允许用 DSH_TEST_LOCALE=en-US 复现 GitHub runner 的英文环境（CI 就是这么跑的）
+LOCALE = os.environ.get("DSH_TEST_LOCALE") or None
 
 HERE = pathlib.Path(__file__).resolve().parent
 FIXTURE = (HERE / "lightbox-fixture.html").as_uri()
@@ -53,7 +57,7 @@ def to_screen(nx: float, ny: float) -> tuple[float, float]:
 def main() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page(viewport={"width": 1280, "height": 900})
+        page = browser.new_page(viewport={"width": 1280, "height": 900}, **({"locale": LOCALE} if LOCALE else {}))
         errors: list[str] = []
         page.on("pageerror", lambda err: errors.append(str(err)))
         page.goto(FIXTURE)
@@ -98,11 +102,11 @@ def main() -> int:
             f"Δ=({after['x']-before['x']:.0f},{after['y']-before['y']:.0f}) 期望≈({expect_dx:.0f},{expect_dy:.0f})",
         )
 
-        page.click('.dsa-btn[title^="撤销"], .dsa-btn[title^="Undo"]')
+        page.click('[data-dsa-action="undo"]')
         page.wait_for_timeout(100)
         undone = page.evaluate(STATE)["strokes"][0]["points"][0]
         check("移动可以撤销", abs(undone["x"] - before["x"]) < 2 and abs(undone["y"] - before["y"]) < 2, json.dumps(undone))
-        page.click('.dsa-btn[title^="重做"], .dsa-btn[title^="Redo"]')
+        page.click('[data-dsa-action="redo"]')
         page.wait_for_timeout(120)
 
         # 重做会清掉选中，重新点选回来
@@ -132,7 +136,7 @@ def main() -> int:
             grown is not None and grown["w"] > box["w"] * 1.15 and grown["h"] > box["h"] * 1.15,
             f"{box['w']:.0f}x{box['h']:.0f} -> {grown['w']:.0f}x{grown['h']:.0f}" if grown else "selection lost",
         )
-        page.click('.dsa-btn[title^="撤销"], .dsa-btn[title^="Undo"]')
+        page.click('[data-dsa-action="undo"]')
         page.wait_for_timeout(100)
 
         # ---------- 文字：新建 / 拖动 / 双击改字 ----------
@@ -195,7 +199,7 @@ def main() -> int:
         page.wait_for_timeout(120)
         state = page.evaluate(STATE)
         check("Delete 删除选中笔迹", state["count"] == 1, f"count={state['count']}")
-        page.click('.dsa-btn[title^="撤销"], .dsa-btn[title^="Undo"]')
+        page.click('[data-dsa-action="undo"]')
         page.wait_for_timeout(120)
         check("删除可以撤销", page.evaluate(STATE)["count"] == 2)
 

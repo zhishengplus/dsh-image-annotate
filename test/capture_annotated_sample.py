@@ -103,7 +103,7 @@ def main(url: str) -> int:
         cx, cy = rect["x"] + BUTTON[0] * kx, rect["y"] + BUTTON[1] * ky
 
         # 圈住按钮
-        page.click('.dsa-btn[title="圆圈"], .dsa-btn[title="Circle"]')
+        page.click('[data-dsa-tool="ellipse"]')
         page.wait_for_timeout(300)
         rx, ry = 118 * kx, 62 * ky
         page.mouse.move(cx + rx, cy)
@@ -115,7 +115,7 @@ def main(url: str) -> int:
         page.wait_for_timeout(500)
 
         # 写一行说明
-        page.click('.dsa-btn[title="文字"], .dsa-btn[title="Text"]')
+        page.click('[data-dsa-tool="text"]')
         page.wait_for_timeout(250)
         page.mouse.click(rect["x"] + LABEL_AT[0] * kx, rect["y"] + LABEL_AT[1] * ky)
         page.wait_for_selector(".dsa-textinput", timeout=4000)
@@ -125,7 +125,7 @@ def main(url: str) -> int:
 
         # 加入输入框 → 取回导出的那张 PNG
         before = page.evaluate("""() => document.querySelectorAll('[aria-label="待发送附件"] img, [aria-label="Attachments"] img').length""")
-        page.click(".dsa-primary")
+        page.click('[data-dsa-action="attach"]')
         page.wait_for_function(
             """(n) => document.querySelectorAll('[aria-label="待发送附件"] img, [aria-label="Attachments"] img').length > n""",
             arg=before,

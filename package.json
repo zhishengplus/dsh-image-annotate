@@ -1,6 +1,6 @@
 {
   "name": "@dsh-plugin/dsh-image-annotate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An annotation pen for the DeepSeek Harness image lightbox: draw, label, then move / resize / re-edit any mark, and send the annotated PNG straight into the composer. 给 DSH 图片预览加一支画笔。",
   "type": "module",
   "main": "lib/index.js",

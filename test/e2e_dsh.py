@@ -172,10 +172,13 @@ def main(url: str) -> int:
                 }
             }"""
         )
-        page.click('.dsa-btn[title="圆圈"]')
+        page.click('[data-dsa-tool="ellipse"]')
         page.wait_for_timeout(150)
-        active_tool = page.evaluate("""() => document.querySelector('.dsa-btn[data-dsa-on="1"]').title""")
-        check("可切换到圆圈工具", active_tool == "圆圈", active_tool)
+        active_tool = page.evaluate(
+            """() => { const el = document.querySelector('[data-dsa-tool][data-dsa-on="1"]');
+                       return el ? el.dataset.dsaTool : null; }"""
+        )
+        check("可切换到圆圈工具", active_tool == "ellipse", str(active_tool))
 
         cx, cy = box["x"] + box["w"] * 0.45, box["y"] + box["h"] * 0.4
         rx, ry = box["w"] * 0.18, box["h"] * 0.16
@@ -240,7 +243,7 @@ def main(url: str) -> int:
         page.screenshot(path=str(SHOTS / "e2e-03c-moved.png"))
 
         # 文字工具：点一下图上位置，打字回车，成为一条独立笔迹
-        page.click('.dsa-btn[title="文字"], .dsa-btn[title="Text"]')
+        page.click('[data-dsa-tool="text"]')
         page.wait_for_timeout(120)
         text_click_x, text_click_y = box["x"] + box["w"] * 0.3, box["y"] + box["h"] * 0.62
         page.mouse.click(text_click_x, text_click_y)
@@ -277,7 +280,7 @@ def main(url: str) -> int:
         page.screenshot(path=str(SHOTS / "e2e-03d-text-moved.png"))
 
         # 撤销：应把刚才那次「拖动文字」撤销回原位；重做再挪回去
-        page.click('.dsa-btn[title^="撤销"], .dsa-btn[title^="Undo"]')
+        page.click('[data-dsa-action="undo"]')
         page.wait_for_timeout(200)
         text_undone = page.evaluate(
             """() => { const s = window.__dshImageAnnotate.annotators[0].state;
@@ -288,7 +291,7 @@ def main(url: str) -> int:
             text_undone["count"] == 2 and abs(text_undone["x"] - text_before["x"]) < 4,
             f"count={text_undone['count']} x={text_undone['x']:.0f} 原始={text_before['x']:.0f}",
         )
-        page.click('.dsa-btn[title^="重做"], .dsa-btn[title^="Redo"]')
+        page.click('[data-dsa-action="redo"]')
         page.wait_for_timeout(200)
         redone = page.evaluate(
             """() => { const s = window.__dshImageAnnotate.annotators[0].state;
@@ -299,7 +302,7 @@ def main(url: str) -> int:
 
         # 加入输入框
         rail_before = page.evaluate("""() => document.querySelectorAll('[aria-label="待发送附件"] img').length""")
-        page.click(".dsa-primary")
+        page.click('[data-dsa-action="attach"]')
         attached = False
         try:
             page.wait_for_function(

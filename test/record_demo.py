@@ -130,7 +130,7 @@ def main(url: str) -> int:
         to_screen = lambda x, y: (rect["x"] + x * kx, rect["y"] + y * ky)  # noqa: E731
 
         # 4) 圈住那个按钮
-        page.click('.dsa-btn[title="圆圈"], .dsa-btn[title="Circle"]')
+        page.click('[data-dsa-tool="ellipse"]')
         page.wait_for_timeout(400)
         cx, cy = to_screen(*BUTTON)
         rx, ry = 118 * kx, 62 * ky
@@ -144,7 +144,7 @@ def main(url: str) -> int:
         page.wait_for_timeout(700)
 
         # 5) 写一行说明
-        page.click('.dsa-btn[title="文字"], .dsa-btn[title="Text"]')
+        page.click('[data-dsa-tool="text"]')
         page.wait_for_timeout(350)
         lx, ly = to_screen(*LABEL_AT)
         page.mouse.click(lx, ly)
@@ -173,7 +173,7 @@ def main(url: str) -> int:
         page.screenshot(path=str(ROOT / "docs" / "demo-move-text.png"))
 
         # 7) 加入输入框 → 预览关闭，附件栏出现标注图
-        page.click(".dsa-primary")
+        page.click('[data-dsa-action="attach"]')
         page.wait_for_timeout(2500)
         dismiss_notices(page)
         page.wait_for_timeout(600)

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.1 — 2026-10-10
+
+* **Locale-independent test hooks.** Every toolbar control now carries a stable `data-dsa-*`
+  hook (`data-dsa-tool`, `data-dsa-action`, `data-dsa-color`, `data-dsa-width`) next to its
+  localized label, so tooling and tests no longer depend on the UI language.
+* **CI actually passes now.** The fixture suites selected buttons by their localized `title`,
+  which worked on a zh-CN machine and timed out on the English GitHub runners. They now use the
+  stable hooks, and both suites accept `DSH_TEST_LOCALE` so the English environment can be
+  reproduced locally. Verified green in `en-US` **and** `zh-CN` (17 + 19 checks each).
+* **Releases no longer paint a red X.** `npm-publish` skips the publish step with a notice when
+  `NPM_TOKEN` is not configured, so tagging a release before npm access exists is safe.
+
 ## 0.1.0 — 2026-10-09
 
 First public release.
