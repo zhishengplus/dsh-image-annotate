@@ -1,96 +1,96 @@
-# 发布指南
+# 发布指南（现状 + 后续）
 
-## 当前状态
+## 当前状态（2026-10-10）
 
-仓库已经发布：**https://github.com/zhishengplus/dsh-image-annotate**（公开）。
-
-还剩三件可选的事，互不依赖，按需做：
-
-| 目标 | 需要什么 | 说明 |
+| 渠道 | 作用 | 状态 |
 |---|---|---|
-| ① npm 上架 | 一个 npm 账号（个人 scope 即可） | 之后用户能 `dsh plugin add @<scope>/dsh-image-annotate` |
-| ② 上架插件市场 dsh-plug.in | 给 `dsh-plugins/dsh-plugin-market` 提 PR | **任何人都能提**；本仓库 `market/` 里已备好描述文件 |
-| ③ 收进 `dsh-plugins` 组织 | 组织成员权限（owner：古镇天Gugle） | 收编后包名可改成 `@dsh-plugin/dsh-image-annotate` |
+| **GitHub 仓库** | 源码与文档 | ✅ https://github.com/zhishengplus/dsh-image-annotate（公开，MIT） |
+| **Release** | 版本锚点 | ✅ `v0.1.0`、`v0.1.1`（Latest） |
+| **CI** | 语法检查 + 两套 Playwright 测试 | ✅ 每次 push 全绿（英文/中文 locale 都验过） |
+| **awesome-dsh-plugin** | 社区唯一精选注册表 → dsh-market（DSH 设置页里的插件市场）、dshmarket.com、dsh-launcher 市场都读它 | ✅ 已提 PR [#7061](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/7061)，双门禁绿，等维护者审阅 |
+| **dsh-plugins 组织** | 组织归属 + `@dsh-plugin` 包名 + dsh-plug.in | ✅ 已提 issue [#1](https://github.com/dsh-plugins/.github/issues/1)（「加入我们」模板），等审核 |
+| **npm** | 让 `dsh plugin add <包名>` 更快 | ⏳ 未发布：需要本机 `npm login`（账号密码/2FA 只有本人能输） |
 
-## ① 发到 npm
+> 注意：**npm 不是必需项**。awesome 列表的条目指向 GitHub 仓库，用户现在就能装：
+> `dsh plugin --profile <PROFILE> add github:zhishengplus/dsh-image-annotate`
+
+---
+
+## ① 发到 npm（只差这一步）
 
 ```powershell
-cd <repo>                                   # 本仓库根目录
-npm login ; npm whoami                       # npm 用户名就是你的个人 scope
+# 1) 登录（本机 registry 指向 npmmirror 镜像，只能读，所以显式指定官方源）
+npm login --registry=https://registry.npmjs.org
 
-# 用 https://github.com/<user>/dsh-image-annotate 当仓库地址时，名字可以保持 @dsh-plugin 之外的形式；
-# 换 scope 会同时改 package.json / cordis.patch.yml / lib/client.js 三处：
-node scripts/rename-scope.mjs @<你的npm用户名>
+# 2) 如果还没拿到 @dsh-plugin scope（等组织收录），改成自己的 scope
+node scripts/rename-scope.mjs @<你的npm用户名>      # 同步改三处：package.json / cordis.patch.yml / lib/client.js
 npm run check
 
-npm pack --pack-destination dist             # 产出 <包名>-0.1.0.tgz
-npm publish dist/<包名>-0.1.0.tgz --access public
+# 3) 打包 + 发布（脚本已固定官方源）
+npm pack --pack-destination dist
+npm run publish:npm
 ```
 
-发布后建议把 README 顶部徽章换成 npm 版本徽章：
+发布后把 README 顶部的 GitHub 徽章旁补一个版本徽章：
 
 ```md
 [![npm](https://img.shields.io/npm/v/<包名>.svg)](https://www.npmjs.com/package/<包名>)
 ```
 
-### 用 GitHub Actions 自动发（可选）
+### 交给 CI 自动发（配一次，之后建 Release 就自动发）
 
-仓库已带 `.github/workflows/npm-publish.yml`：
-
-1. npm → Access Tokens → 生成 **Automation** token（对该包有 publish 权限）；
-2. GitHub 仓库 → Settings → Secrets and variables → Actions → 新建 secret：`NPM_TOKEN`；
-3. 以后发版：`npm version patch` → `git push --follow-tags` → `gh release create vX.Y.Z --generate-notes`，
+1. npm → Access Tokens → 生成 **Automation** token（对该包名有 publish 权限）；
+2. 仓库 Settings → Secrets and variables → Actions → 新建 `NPM_TOKEN`；
+3. 以后：`npm version patch` → `git push --follow-tags` → `gh release create vX.Y.Z --generate-notes`，
    workflow 会自动 `npm publish --provenance --access public`。
+   没有配置 token 时该步骤会**自动跳过并给出提示**，不会把 Actions 弄红。
 
-`.github/workflows/ci.yml` 每次 push/PR 都会跑：语法检查 + `npm pack --dry-run` + 两套 Playwright fixture 测试。
+---
 
-## ② 上架插件市场（dsh-plug.in）
+## ② 社区列表（awesome-dsh-plugin）—— 已提交
 
-市场是独立仓库 `dsh-plugins/dsh-plugin-market`，一个插件一个 JSON，PR 合并后自动聚合、站点自动刷新。
+它是整个生态的注册表：**dsh-market**（DSH 设置页内的插件市场）、**dshmarket.com**、**awesome-dsh-plugin.com**、**dsh-launcher 的插件市场**都从这一份列表取数据。dsh-market 的 README 明确说明：插件条目 PR 要提到这里，而不是提到市场仓库。
 
-```powershell
-gh repo fork dsh-plugins/dsh-plugin-market --clone --remote
-cd dsh-plugin-market
-git checkout -b add-dsh-image-annotate
-# 把本仓库 market/dsh-plugins-dsh-image-annotate.json 复制进 plugins/
-#   id 二选一：
-#     "github:zhishengplus/dsh-image-annotate"      ← 还没发 npm 时用这个
-#     "@<scope>/dsh-image-annotate"                 ← 发过 npm 之后用这个
-git add plugins/dsh-plugins-dsh-image-annotate.json
-git commit -m "Add DSH Image Annotate"
-git push -u origin add-dsh-image-annotate
-gh pr create --title "Add DSH Image Annotate" `
-  --body "Image-lightbox annotation pen. Repo: https://github.com/zhishengplus/dsh-image-annotate"
+投稿方式：**在 `data/plugins/` 下加一个 YAML 文件**（一个文件就是全部投稿，README 由脚本生成，不要手改）：
+
+```yaml
+url: https://github.com/zhishengplus/dsh-image-annotate
+name: zhishengplus/dsh-image-annotate
+category: ui
+description:
+  en: ...
+  zh: ...
 ```
 
-字段规范见市场仓库 README：`id` / `name` / `description[]` / `support_versions` / `urls` / `relationship`。
-本插件**零依赖**（不需要 dsh-loader），所以 `relationship` 是空数组。
+本次提交：分支 `zhishengplus:add-zhishengplus-dsh-image-annotate`（本地 clone 在 `_work/annotate/publish/awesome-fork`），PR [#7061](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/7061)。
+若维护者提修改要求，只改 `data/plugins/` 下那一个 YAML 再推即可。
 
-## ③ 申请收进 dsh-plugins 组织
+CI 会校验：`dsh.bundle` 清单、`cordis.patch.yml`、**仓库创建满 1 天**、`dsh-plugin` topic、描述是否属实。
 
-组织 owner 是 **古镇天Gugle**（`.github` 仓库 profile 里有 QQ 群 906233087）。
-组织里的插件都是 `@dsh-plugin/*` 包名 + `dsh-plugins/*` 仓库 + 市场 JSON，与本仓库结构一致。
-申请时可以直接发：
+---
 
-> 你好，我做了一个 DSH 插件想收进 dsh-plugins：
->
-> - **dsh-image-annotate** —— 给图片预览（lightbox）加一支画笔：圈选 / 箭头 / 方框 / 文字，画完还能再选中拖动、缩放、改字，一键把标注后的 PNG 放进输入框发给模型
-> - 仓库：https://github.com/zhishengplus/dsh-image-annotate
-> - 依赖：**零依赖**（不 import 任何 `@deepseek-ai/*`，也不需要 dsh-loader；纯 DOM 叠加 + 手写 client bundle，无构建步骤）
-> - 支持版本：dsh `0.2.0-rc.2` 实测通过
-> - 验证：fixture 17 + 19 项、隔离实例真机端到端 21 项（含导出分辨率与附件投递断言），仓库带 CI
-> - 希望：收进组织并发布为 `@dsh-plugin/dsh-image-annotate`（npm 上该名字未被占用），仓库可以转过去或我提 PR
->
-> README（英文 / 中文）和演示 GIF 都在仓库里。
+## ③ 收进 dsh-plugins 组织 —— 已提交
 
-有权限之后（或对方建好仓库之后）：
+组织用「**加入我们**」issue 模板审核收录（`.github` 仓库里）：<https://github.com/dsh-plugins/.github/issues/1>
+
+审核通过后会收到组织邀请，之后的收尾动作：
 
 ```powershell
+# 仓库转进组织（也可由对方接收）
+#   GitHub → 仓库 Settings → Transfer ownership → dsh-plugins/dsh-image-annotate
 git remote set-url origin git@github.com:dsh-plugins/dsh-image-annotate.git
-git push -u origin main
-# 包名不用改（本来就是 @dsh-plugin/dsh-image-annotate），拿到 scope 权限后：
-npm publish dist/dsh-plugin-dsh-image-annotate-0.1.0.tgz --access public
+# 包名本来就是 @dsh-plugin/dsh-image-annotate，拿到 npm scope 权限后直接发
+npm run publish:npm
 ```
+
+---
+
+## ④ dsh-plugins 自己的小市场（dsh-plug.in）
+
+进组织后再加条目：把本仓库 `market/dsh-plugins-dsh-image-annotate.json` 提交到 `dsh-plugins/dsh-plugin-market` 的 `plugins/`。
+（外部直接提 PR 会被关掉——已实测过，所以先走 ③。）
+
+---
 
 ## 改包名 / 换 scope
 
@@ -105,6 +105,8 @@ node scripts/rename-scope.mjs --check          # 检查三处是否一致
 node scripts/rename-scope.mjs @<scope>         # 一键改三处
 ```
 
+---
+
 ## 发布前检查清单
 
 - [ ] `npm run check` 通过
@@ -112,5 +114,5 @@ node scripts/rename-scope.mjs @<scope>         # 一键改三处
 - [ ] `npm pack --dry-run` 只含运行时文件（不应出现 `test/`、`docs/`、`market/`、`scripts/`）
 - [ ] `package.json` 的 `repository` / `homepage` / `bugs` 指向真实仓库
 - [ ] `LICENSE` 署名正确
-- [ ] `market/*.json` 的 `id` 与实际包名（或 `github:owner/repo`）一致
+- [ ] `market/*.json` 与 awesome 条目的 `id`/`url` 与实际仓库一致
 - [ ] 演示素材不含任何真实工作区 / 会话 / 账号信息（`docs/*` 由 `test/record_demo.py` 在全新实例上生成）

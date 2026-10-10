@@ -20,7 +20,8 @@
     "check": "node --check lib/index.js && node --check lib/client.js",
     "test": "python test/test_annotate.py && python test/test_edit.py",
     "test:e2e": "python test/e2e_dsh.py",
-    "pack:dry": "npm pack --dry-run"
+    "pack:dry": "npm pack --dry-run",
+    "publish:npm": "npm publish --registry=https://registry.npmjs.org --access public"
   },
   "dsh": {
     "bundle": {
